@@ -965,10 +965,11 @@ h = '<p class="line">Sharing is on. You both see the same logs and can leave eac
 '<label class="gl" for="shLink" style="display:block;margin-top:12px">Link</label><input type="text" class="tin" id="shLink" readonly value="' + esc(link) + '">' +
 '<div class="racts" style="margin-top:8px"><button class="sm solid" type="button" data-sh="copy">Copy link</button></div>' + nameField() +
 '<p class="meta" id="shStat" style="margin-top:12px"></p>' +
+'<p class="meta" style="margin-top:12px">Not seeing your friend\u2019s notes? You may be in a different space. Paste the link from your friend below to switch. Your own entries come along.</p>' + '<label class="gl" for="shPaste" style="display:block;margin-top:16px">Join a different link</label><input type="text" class="tin" id="shPaste" autocomplete="off" placeholder="Paste the link here"><div class="racts" style="margin-top:8px"><button class="sm" type="button" data-sh="joinlink">Join this link</button></div>' + '<p class="msg" id="shMsg" role="alert"></p>' +
 '<div class="racts"><button class="link danger" type="button" data-sh="leave">Stop sharing on this device</button></div>';
 } else {
 h = '<p class="line">Use Senisha with a friend. You both see the same logs and can leave each other notes. Right now everything stays on this device.</p>' + nameField() +
-'<button class="primary" type="button" data-sh="start" style="margin-top:12px">Start sharing</button><p class="msg" id="shMsg" role="alert"></p>';
+'<button class="primary" type="button" data-sh="start" style="margin-top:12px">Start sharing</button>' + '<label class="gl" for="shPaste" style="display:block;margin-top:16px">Or join a link from your friend</label><input type="text" class="tin" id="shPaste" autocomplete="off" placeholder="Paste the link here"><div class="racts" style="margin-top:8px"><button class="sm" type="button" data-sh="joinlink">Join this link</button></div>' + '<p class="msg" id="shMsg" role="alert"></p>';
 }
 el.innerHTML = h; updStat();
 }
@@ -1056,6 +1057,19 @@ if (a === 'start'){ id = await rpc('create_space', {}); if (typeof id !== 'strin
 else id = joinId;
 space = id.toLowerCase(); lsSet(SPACE_KEY, space); if (a === 'start') lsSet(READ_KEY, String(Date.now())); joinId = null; remote = null; syncErr = false; lastSync = 0;
 clearHash(); renderShare(); render(); sync();
+}catch(e){ b.disabled = false; shMsg("Couldn't connect. Check your internet and try again."); }
+} else if (a === 'joinlink'){
+var m = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.exec($('shPaste').value || '');
+var nm2 = ($('shName').value || '').trim().slice(0,30);
+if (!m){ shMsg('That does not look like a Senisha link. Paste the whole link.'); return; }
+if (!nm2){ shMsg('Add your name first so notes show who wrote them.'); return; }
+b.disabled = true; shMsg('');
+try{
+var target = m[0].toLowerCase(), found = await rpc('get_space', { p_id:target });
+if (found === null){ b.disabled = false; shMsg('No shared space found for that link. Check it and try again.'); return; }
+myName = nm2; lsSet(NAME_KEY, nm2);
+space = target; lsSet(SPACE_KEY, space); joinId = null; remote = null; syncErr = false; lastSync = 0;
+clearHash(); renderShare(); render(); sync(); toast('Joined!');
 }catch(e){ b.disabled = false; shMsg("Couldn't connect. Check your internet and try again."); }
 } else if (a === 'nojoin'){ joinId = null; clearHash(); renderShare(); }
 else if (a === 'leave'){ space = null; remote = null; lsSet(SPACE_KEY, null); renderShare(); render(); }
