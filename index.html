@@ -187,9 +187,15 @@ textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(
 .row-st .st:nth-child(odd){transform:rotate(-8deg)}
 .row-st .st:nth-child(even){transform:rotate(8deg)}
 .tin{width:100%;margin-top:4px}
+#pop{position:fixed;left:50%;transform:translate(-50%,-16px);top:calc(12px + env(safe-area-inset-top,0px));width:calc(100% - 32px);max-width:28rem;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--fg);border:2px solid var(--accent);box-shadow:0 4px 0 var(--accent-soft);border-radius:22px;padding:8px 14px 8px 10px;text-align:left;z-index:80;opacity:0;transition:opacity .2s,transform .3s cubic-bezier(.3,1.5,.5,1);cursor:pointer;font:inherit}
+#pop.on{opacity:1;transform:translate(-50%,0)}
+#pop .st{width:44px;height:44px}
+#pop .ptxt{display:grid;min-width:0}
+#pop .ptxt b{font:600 .9375rem var(--font-display)}
+#pop .ptxt span{font-size:.875rem;color:var(--muted);overflow-wrap:anywhere}
 .ntext{white-space:pre-wrap;overflow-wrap:anywhere}
 #shareBody .line+.gl{margin-top:12px}
-@media (prefers-reduced-motion: reduce){#toast{transition:none}#toast.on .st,.bob{animation:none}}
+@media (prefers-reduced-motion: reduce){#pop{transition:none}#toast{transition:none}#toast.on .st,.bob{animation:none}}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 <defs>
@@ -426,6 +432,7 @@ textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(
 </footer>
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
+<button id="pop" type="button" hidden></button>
 <script>
 (function(){
 'use strict';
@@ -477,8 +484,8 @@ var mood = (Array.isArray(e.mood) ? e.mood : []).filter(function(x){ return MOOD
 var body = (Array.isArray(e.body) ? e.body : []).filter(function(x){ return BODY.indexOf(x) > -1; });
 var flow = FLOW.indexOf(e.flow) > -1 ? e.flow : '';
 var note = typeof e.note === 'string' ? e.note.slice(0,500) : '';
-var by = typeof e.by === 'string' ? e.by.slice(0,30) : '';
-if (mood.length || body.length || flow || note) out[k] = { mood:mood, body:body, flow:flow, note:note, by:by };
+var by = typeof e.by === 'string' ? e.by.slice(0,30) : '', at = Number(e.at) || 0;
+if (mood.length || body.length || flow || note) out[k] = { mood:mood, body:body, flow:flow, note:note, by:by, at:at };
 });
 return out;
 }
@@ -831,7 +838,7 @@ msg.textContent = '';
 if (!valid(d) || parse(d) > T){ msg.textContent = 'Pick a date that is today or earlier.'; return; }
 var note = $('feelNote').value.trim().slice(0,500);
 if (form.mood.length || form.body.length || form.flow || note){
-state.logs[d] = { mood: form.mood.slice(), body: form.body.slice(), flow: form.flow, note: note, by: myName };
+state.logs[d] = { mood: form.mood.slice(), body: form.body.slice(), flow: form.flow, note: note, by: myName, at: Date.now() };
 } else { delete state.logs[d]; }
 formTouched = false; burst(ev.currentTarget); save(); renderEntries(); renderCal();
 });
@@ -921,6 +928,7 @@ var merged = applyChanges(rem, ch), before = canon(loc);
 state.periods = mapToPeriods(merged.periods); state.logs = clone(merged.logs); notes = clone(merged.notes);
 remote = merged;
 if (canon(snapshot()) !== before){ persistLocal(); loadForm(); }
+checkIncoming();
 } else {
 remote = applyChanges(base, ch);
 if (changed) syncAgain = true;
@@ -976,6 +984,49 @@ return '<li class="row"><div class="rmain"><span class="ntext">' + esc(n.text) +
 (mine ? '<button class="link danger" type="button" data-ndel="' + esc(k) + '">Delete</button>' : '') + '</li>';
 }).join('');
 }
+var READ_KEY = 'senisha.read', popAt = 0, popTimer = 0, notesInView = false;
+function lastRead(){ return Number(lsGet(READ_KEY)) || 0; }
+function markRead(){ lsSet(READ_KEY, String(Date.now())); popAt = Date.now(); document.title = 'Senisha'; }
+function hidePop(){ var el = $('pop'); el.classList.remove('on'); setTimeout(function(){ if (!el.classList.contains('on')) el.hidden = true; }, 300); }
+function newFromOthers(){
+var lr = lastRead(), out = [];
+Object.keys(notes).forEach(function(k){ var n = notes[k]; if (n.by !== myName && n.at > lr) out.push({ at:n.at, by:n.by, kind:'note', text:n.text }); });
+Object.keys(state.logs).forEach(function(d){
+var e = state.logs[d];
+if (e.by && e.by !== myName && e.at > lr){
+var bits = [].concat(e.flow ? [e.flow.toLowerCase() + ' flow'] : [], e.mood, e.body).join(', ');
+out.push({ at:e.at, by:e.by, kind:'log', text:(bits || (e.note ? 'a note' : 'an update')) + ' (' + fmt(parse(d)) + ')' });
+}
+});
+return out.sort(function(a,b){ return a.at - b.at; });
+}
+function showPop(list){
+var n = list[list.length - 1], el = $('pop'), names = ['star','heart','flower','strawberry','cloud','mochi','ghost','boba','cupcake','cherry'];
+var who = n.by || 'Someone', title;
+if (list.length === 1) title = who + (n.kind === 'note' ? ' left a note' : ' updated the log');
+else title = who + ' has ' + list.length + ' new updates';
+var t = n.text.length > 90 ? n.text.slice(0,90) + '…' : n.text;
+el.innerHTML = '<svg class="st" aria-hidden="true"><use href="#st-' + names[Math.floor(Math.random()*names.length)] + '"/></svg><span class="ptxt"><b>' + esc(title) + '</b><span>' + esc(t) + '</span></span>';
+el.setAttribute('data-go', list.some(function(x){ return x.kind === 'note'; }) ? 'notesCard' : 'feelCard');
+el.hidden = false; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+clearTimeout(popTimer); popTimer = setTimeout(hidePop, 10000);
+}
+function checkIncoming(){
+if (!space) return;
+var fresh = newFromOthers();
+if (!fresh.length) return;
+var latest = fresh[fresh.length - 1].at;
+if (notesInView && !document.hidden){ markRead(); return; }
+if (latest <= popAt) return;
+popAt = latest;
+if (document.hidden) document.title = '(' + fresh.length + ') Senisha';
+else showPop(fresh);
+}
+$('pop').addEventListener('click', function(){ var go = $('pop').getAttribute('data-go'); hidePop(); markRead(); var c = $(go || 'notesCard'); if (c && !c.hidden) c.scrollIntoView({ behavior:'smooth', block:'center' }); });
+if (window.IntersectionObserver){
+new IntersectionObserver(function(es){ notesInView = es[0].isIntersecting; if (notesInView && !document.hidden){ markRead(); hidePop(); } }, { threshold:0.4 }).observe($('notesCard'));
+}
+document.addEventListener('visibilitychange', function(){ if (!document.hidden){ if (notesInView){ markRead(); hidePop(); } else checkIncoming(); } });
 $('shareBody').addEventListener('input', function(ev){
 if (ev.target.id === 'shName'){ myName = ev.target.value.trim().slice(0,30); lsSet(NAME_KEY, myName); }
 });
@@ -993,7 +1044,7 @@ try{
 var id;
 if (a === 'start'){ id = await rpc('create_space', {}); if (typeof id !== 'string' || !UUID.test(id)) throw new Error('bad id'); }
 else id = joinId;
-space = id.toLowerCase(); lsSet(SPACE_KEY, space); joinId = null; remote = null; syncErr = false; lastSync = 0;
+space = id.toLowerCase(); lsSet(SPACE_KEY, space); if (a === 'start') lsSet(READ_KEY, String(Date.now())); joinId = null; remote = null; syncErr = false; lastSync = 0;
 clearHash(); renderShare(); render(); sync();
 }catch(e){ b.disabled = false; shMsg("Couldn't connect. Check your internet and try again."); }
 } else if (a === 'nojoin'){ joinId = null; clearHash(); renderShare(); }
@@ -1005,7 +1056,7 @@ m.textContent = '';
 if (!myName){ m.textContent = 'Add your name in the Together card first.'; return; }
 if (!t){ m.textContent = 'Write something first.'; return; }
 notes[Date.now().toString(36) + Math.random().toString(36).slice(2,6)] = { text:t, by:myName, at:Date.now() };
-$('noteIn').value = ''; burst(ev.currentTarget); save(); renderNotes();
+$('noteIn').value = ''; markRead(); burst(ev.currentTarget); save(); renderNotes();
 });
 $('noteList').addEventListener('click', function(ev){
 var b = ev.target.closest('button'); if (!b) return;
