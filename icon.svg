@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" width="512" height="512">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD3E8"/><stop offset="1" stop-color="#FF9CC7"/></linearGradient>
+<pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="4" fill="#fff" opacity=".35"/></pattern>
+<g id="face">
+<ellipse cx="24" cy="0" rx="2.6" ry="3.3" fill="#3B2540"/>
+<ellipse cx="40" cy="0" rx="2.6" ry="3.3" fill="#3B2540"/>
+<ellipse cx="18" cy="6" rx="4.2" ry="2.8" fill="#FF8FB8" opacity=".75"/>
+<ellipse cx="46" cy="6" rx="4.2" ry="2.8" fill="#FF8FB8" opacity=".75"/>
+<path d="M29 6q3 3.2 6 0" fill="none" stroke="#3B2540" stroke-width="2.2" stroke-linecap="round"/>
+</g><symbol id="st-mochi" viewBox="-4 -4 72 72">
+<path d="M8 42C8 26 19 17 32 17C45 17 56 26 56 42C56 51 47 57 32 57C17 57 8 51 8 42Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+<path d="M32 19C29 11 33 6 40 7C41 14 38 19 32 19Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+<path d="M8 42C8 26 19 17 32 17C45 17 56 26 56 42C56 51 47 57 32 57C17 57 8 51 8 42Z" fill="#FFE0EC" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M32 19C29 11 33 6 40 7C41 14 38 19 32 19Z" fill="#A6E8BE" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+<use href="#face" y="38"/>
+</symbol><symbol id="st-star" viewBox="-4 -4 72 72">
+<polygon points="32,7 39,24 57,25 43,37 48,55 32,45 16,55 21,37 7,25 25,24" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+<polygon points="32,7 39,24 57,25 43,37 48,55 32,45 16,55 21,37 7,25 25,24" fill="#FFE27A" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+<use href="#face" y="33"/>
+</symbol><symbol id="st-heart" viewBox="-4 -4 72 72">
+<path d="M32 56C10 42 8 24 20 18C27 15 31 20 32 23C33 20 37 15 44 18C56 24 54 42 32 56Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+<path d="M32 56C10 42 8 24 20 18C27 15 31 20 32 23C33 20 37 15 44 18C56 24 54 42 32 56Z" fill="#FFB5D4" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+<use href="#face" y="34"/>
+</symbol><symbol id="st-spark" viewBox="-4 -4 72 72">
+<path d="M32 4Q35 29 60 32Q35 35 32 60Q29 35 4 32Q29 29 32 4Z" fill="#fff" stroke="#fff" stroke-width="9" stroke-linejoin="round"/>
+<path d="M32 4Q35 29 60 32Q35 35 32 60Q29 35 4 32Q29 29 32 4Z" fill="#FFE27A" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+</symbol></defs>
+<rect width="512" height="512" fill="url(#bg)"/><rect width="512" height="512" fill="url(#dots)"/>
+<svg x="64" y="76" width="384" height="384" viewBox="-4 -4 72 72"><use href="#st-mochi"/></svg>
+<svg x="338" y="70" width="104" height="104"><use href="#st-spark"/></svg>
+<svg x="62" y="64" width="84" height="84"><use href="#st-heart"/></svg>
+</svg>
