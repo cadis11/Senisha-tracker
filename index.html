@@ -1,0 +1,959 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#FFF0F7"><meta name="robots" content="noindex"><meta name="description" content="Senisha, a simple and cute period tracker."><style>:root{color-scheme:light;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style><title>Senisha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow column. Cycle ring and status first, then the log button, the month calendar, then history. */
+:root{
+  --bg:#FFF0F7;
+  --surface:#FFFFFF;
+  --fg:#3B2540;
+  --muted:#7D6788;
+  --line:#F6CFE3;
+  --accent:#C92A6B;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#FFDDEB;
+  --danger:#A3262B;
+  --fert:#1F7A68;
+  --fert-soft:#D4F1E6;
+  --fert-ink:#FFFFFF;
+  --lav:#E9DEFF;
+  --dot:#FFD9EA;
+  --font-display:"Fredoka","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Nunito","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1E1426;
+    --surface:#2B1D37;
+    --fg:#FBEFF7;
+    --muted:#C3AAD0;
+    --line:#4D3763;
+    --accent:#FF7DB0;
+    --accent-ink:#2A0F1E;
+    --accent-soft:#5C2D49;
+    --danger:#F08A8E;
+    --fert:#4FBFA5;
+    --fert-soft:#1E3A33;
+    --fert-ink:#0F211C;
+  --lav:#3D2D63;
+  --dot:#2C1D38;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1E1426;
+  --surface:#2B1D37;
+  --fg:#FBEFF7;
+  --muted:#C3AAD0;
+  --line:#4D3763;
+  --accent:#FF7DB0;
+  --accent-ink:#2A0F1E;
+  --accent-soft:#5C2D49;
+  --danger:#F08A8E;
+  --fert:#4FBFA5;
+  --fert-soft:#1E3A33;
+  --fert-ink:#0F211C;
+  --lav:#3D2D63;
+  --dot:#2C1D38;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);background-image:radial-gradient(var(--dot) 2px,transparent 2.3px);background-size:24px 24px;color:var(--fg);font:400 16px/1.5 var(--font-body);padding-inline:16px;padding-block:20px 56px}
+.wrap{max-width:30rem;margin-inline:auto;display:grid;gap:14px}
+h1{font:600 2rem/1.1 var(--font-display);margin:0;display:flex;align-items:center;gap:8px}
+h2{font:600 1.05rem/1.2 var(--font-display);margin:0}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
+.store{color:var(--muted);font-size:.8125rem}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:26px;padding:18px;min-width:0;box-shadow:0 4px 0 var(--line)}
+.banner{background:var(--accent-soft);border-radius:14px;padding:14px 16px;display:grid;gap:10px;font-size:.9375rem}
+.banner .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+.hero{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.ring{width:132px;height:132px;flex:none}
+.ring circle{fill:none;stroke-width:10}
+.ring .trk{stroke:var(--line)}
+.ring .prg{stroke:var(--accent);stroke-linecap:round}
+.ring .rnum{font:700 38px var(--font-display);fill:var(--fg);font-variant-numeric:tabular-nums}
+.ring .rlab{font:500 10px var(--font-body);fill:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.heroText{display:grid;gap:6px;flex:1 1 12rem;min-width:0}
+.phase{font:700 1.375rem/1.15 var(--font-display);letter-spacing:-.01em;text-wrap:balance}
+.line{color:var(--muted);font-size:.9375rem}
+.line b{color:var(--fg);font-weight:600}
+
+.logrow{display:flex;gap:10px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-block:12px}
+.logrow label{font-weight:500}
+input[type=date]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;min-width:0}
+.primary{width:100%;min-height:52px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:600 1.125rem var(--font-display);box-shadow:0 4px 0 rgba(91,42,76,.35);transition:transform .08s,box-shadow .08s}
+.primary:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(91,42,76,.35)}
+.sm{min-height:40px;padding:6px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surface);font-weight:500;font-size:.9375rem}
+.sm.solid{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.msg{color:var(--danger);font-size:.875rem;min-height:0;margin-top:8px}
+.msg:empty{display:none}
+
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.nav{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:1.125rem;line-height:1}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow{margin-bottom:4px;text-align:center;font-size:.75rem;color:var(--muted);font-weight:500}
+.day{position:relative;aspect-ratio:1;max-width:100%;display:grid;place-items:center;border-radius:50%;font-variant-numeric:tabular-nums;font-size:.9375rem}
+.day.period{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.day.pred{border:2px dashed var(--accent)}
+.day.today{box-shadow:0 0 0 2px var(--fg);font-weight:700}
+.legend{display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:14px;font-size:.8125rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:5px;display:inline-block}
+.sw.p{background:var(--accent)}
+.sw.e{border:2px dashed var(--accent)}
+.sw.t{box-shadow:0 0 0 2px var(--fg)}
+
+.hist{list-style:none;margin:12px 0 0;padding:0;display:grid}
+.row{display:flex;gap:6px 12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding-block:12px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.rmain{display:grid;min-width:0}
+.meta{color:var(--muted);font-size:.875rem}
+.racts{display:flex;gap:6px;flex-wrap:wrap}
+.link{background:none;border:0;padding:8px 6px;min-height:40px;color:var(--accent);font-weight:600;font-size:.9375rem}
+.link.danger{color:var(--danger)}
+.erow{display:flex;gap:10px 14px;flex-wrap:wrap;width:100%}
+.erow label{display:grid;gap:4px;font-size:.875rem;color:var(--muted)}
+.row.edit{display:grid}
+.stats{display:flex;gap:8px 20px;flex-wrap:wrap;margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+.stats div{display:grid;gap:2px}
+.stats dt{font-size:.8125rem;color:var(--muted)}
+.stats dd{margin:0;font:600 1.0625rem var(--font-display);font-variant-numeric:tabular-nums}
+.note{margin-top:10px;font-size:.8125rem;color:var(--muted)}
+.empty{display:grid;gap:6px}
+
+.day.f1{background:var(--fert-soft)}
+.day.f2{background:var(--fert);color:var(--fert-ink);font-weight:600}
+.sw.f0{background:var(--bg);border:1px solid var(--line)}
+.sw.f1{background:var(--fert-soft);border:1px solid var(--line)}
+.sw.f2{background:var(--fert)}
+.pill{display:inline-flex;align-items:center;padding:7px 14px;border-radius:16px;line-height:1.25;font:700 1.0625rem/1.25 var(--font-display);border:1px solid var(--line);background:var(--bg)}
+.pill.l1{background:var(--fert-soft);border-color:transparent}
+.pill.l2{background:var(--fert);border-color:transparent;color:var(--fert-ink)}
+.strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:14px}
+.sc{display:grid;place-items:center;padding:6px 0;border-radius:10px;border:1px solid var(--line);font-size:.75rem;color:var(--muted)}
+.sc b{font:600 .9375rem var(--font-body);color:var(--fg);font-variant-numeric:tabular-nums}
+.sc.l1{background:var(--fert-soft);border-color:transparent}
+.sc.l2{background:var(--fert);border-color:transparent;color:var(--fert-ink)}
+.sc.l2 b{color:var(--fert-ink)}
+.fnote{margin-top:14px;font-size:.8125rem;color:var(--muted)}
+.fcard .line{margin-top:10px}
+.pname{font:700 1.125rem/1.2 var(--font-display)}
+.pdays{color:var(--muted);font-size:.875rem;margin-top:2px}
+.tag{display:inline-block;margin-left:6px;padding:2px 10px;border-radius:999px;background:var(--accent-soft);font:600 .75rem var(--font-body);vertical-align:middle}
+.pd{display:grid;margin:8px 0 0}
+.pd dt{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:12px}
+.pd dd{margin:2px 0 0}
+details.all{margin-top:16px;border-top:1px solid var(--line);padding-top:6px}
+details.all summary{cursor:pointer;font-weight:600;color:var(--accent);min-height:44px;display:flex;align-items:center}
+.ph{padding-block:16px;border-top:1px solid var(--line)}
+.ph:first-child{border-top:0}
+details.acc{border-top:1px solid var(--line);padding-block:2px}
+details.acc:first-of-type{border-top:0}
+details.acc summary{cursor:pointer;font-weight:600;min-height:48px;display:flex;align-items:center}
+details.acc h3{font:600 .8125rem var(--font-body);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 0}
+details.acc ul{margin:8px 0 12px;padding-left:1.1rem;display:grid;gap:8px}
+.day.logged::after{content:"";position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:currentColor}
+.sw.n{width:6px;height:6px;border-radius:50%;background:var(--fg);margin-inline:4px}
+.grp{display:grid;gap:8px;margin-top:16px}
+.gl{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:40px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-size:.9375rem}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;resize:vertical;min-height:64px}
+#feelSave{margin-top:16px}
+.sub{font:600 .9375rem var(--font-display);margin:22px 0 4px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--fg);border:2px solid var(--accent);box-shadow:0 4px 0 var(--accent-soft);padding:8px 20px 8px 12px;border-radius:999px;font:600 1rem var(--font-display);max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
+#toast.on{opacity:1}
+#toast .st{width:44px;height:44px;margin-block:-8px}
+#toast.on .st{animation:pop .55s cubic-bezier(.3,1.7,.5,1)}
+@keyframes pop{0%{transform:scale(.2) rotate(-25deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-4px) rotate(4deg)}}
+@keyframes fly{0%{transform:translate(0,0) scale(.4) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(var(--r));opacity:0}}
+.st{width:40px;height:40px;flex:none;filter:drop-shadow(0 2px 0 rgba(91,58,95,.28))}
+.st.s32{width:36px;height:36px}
+.st.big{width:64px;height:64px}
+.bob{animation:bob 3s ease-in-out infinite}
+.ctitle{display:flex;align-items:center;gap:8px}
+.ctitle .st{width:34px;height:34px;transform:rotate(-8deg)}
+.mascot{flex:1 1 100%;display:flex;align-items:center;gap:12px}
+.bubble{position:relative;background:var(--accent-soft);border-radius:18px;padding:10px 14px;font-weight:600;font-size:.9375rem;min-width:0}
+.bubble::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-7px;border:7px solid transparent;border-left:0;border-right-color:var(--accent-soft)}
+.fly{position:fixed;width:30px;height:30px;margin:-15px 0 0 -15px;pointer-events:none;z-index:70;animation:fly .9s ease-out forwards}
+.fly svg{width:100%;height:100%}
+.st.side{width:42px;height:42px;transform:rotate(8deg)}
+.foot{display:grid;justify-items:center;gap:6px;margin-top:6px;color:var(--muted);font:600 .9375rem var(--font-display);text-align:center}
+.row-st{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.row-st .st:nth-child(odd){transform:rotate(-8deg)}
+.row-st .st:nth-child(even){transform:rotate(8deg)}
+@media (prefers-reduced-motion: reduce){#toast{transition:none}#toast.on .st,.bob{animation:none}}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="face">
+      <ellipse cx="24" cy="0" rx="2.6" ry="3.3" fill="#3B2540"/>
+      <ellipse cx="40" cy="0" rx="2.6" ry="3.3" fill="#3B2540"/>
+      <ellipse cx="18" cy="6" rx="4.2" ry="2.8" fill="#FF8FB8" opacity=".75"/>
+      <ellipse cx="46" cy="6" rx="4.2" ry="2.8" fill="#FF8FB8" opacity=".75"/>
+      <path d="M29 6q3 3.2 6 0" fill="none" stroke="#3B2540" stroke-width="2.2" stroke-linecap="round"/>
+    </g>
+    <symbol id="st-mochi" viewBox="-4 -4 72 72">
+      <path d="M8 42C8 26 19 17 32 17C45 17 56 26 56 42C56 51 47 57 32 57C17 57 8 51 8 42Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M32 19C29 11 33 6 40 7C41 14 38 19 32 19Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M8 42C8 26 19 17 32 17C45 17 56 26 56 42C56 51 47 57 32 57C17 57 8 51 8 42Z" fill="#FFE0EC" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M32 19C29 11 33 6 40 7C41 14 38 19 32 19Z" fill="#A6E8BE" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <use href="#face" y="38"/>
+    </symbol>
+    <symbol id="st-star" viewBox="-4 -4 72 72">
+      <polygon points="32,7 39,24 57,25 43,37 48,55 32,45 16,55 21,37 7,25 25,24" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <polygon points="32,7 39,24 57,25 43,37 48,55 32,45 16,55 21,37 7,25 25,24" fill="#FFE27A" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <use href="#face" y="33"/>
+    </symbol>
+    <symbol id="st-cloud" viewBox="-4 -4 72 72">
+      <path d="M16 52a10 10 0 0 1 2-19a14 14 0 0 1 27-3a11 11 0 0 1 4 22Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M16 52a10 10 0 0 1 2-19a14 14 0 0 1 27-3a11 11 0 0 1 4 22Z" fill="#CFE8FF" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <use href="#face" y="40"/>
+    </symbol>
+    <symbol id="st-strawberry" viewBox="-4 -4 72 72">
+      <path d="M32 57C15 49 8 34 13 25C17 18 27 20 32 25C37 20 47 18 51 25C56 34 49 49 32 57Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M21 18L32 10L43 18L32 24Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M32 57C15 49 8 34 13 25C17 18 27 20 32 25C37 20 47 18 51 25C56 34 49 49 32 57Z" fill="#FF9BB0" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M21 18L32 10L43 18L32 24Z" fill="#A6E8BE" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <use href="#face" y="37"/>
+    </symbol>
+    <symbol id="st-heart" viewBox="-4 -4 72 72">
+      <path d="M32 56C10 42 8 24 20 18C27 15 31 20 32 23C33 20 37 15 44 18C56 24 54 42 32 56Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M32 56C10 42 8 24 20 18C27 15 31 20 32 23C33 20 37 15 44 18C56 24 54 42 32 56Z" fill="#FFB5D4" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <use href="#face" y="34"/>
+    </symbol>
+    <symbol id="st-flower" viewBox="-4 -4 72 72">
+      <g fill="#fff" stroke="#fff" stroke-width="10">
+        <circle cx="47" cy="32" r="9.5"/><circle cx="39.5" cy="45" r="9.5"/><circle cx="24.5" cy="45" r="9.5"/>
+        <circle cx="17" cy="32" r="9.5"/><circle cx="24.5" cy="19" r="9.5"/><circle cx="39.5" cy="19" r="9.5"/>
+      </g>
+      <g fill="#FFC4DE" stroke="#5B3A5F" stroke-width="2.5">
+        <circle cx="47" cy="32" r="9.5"/><circle cx="39.5" cy="45" r="9.5"/><circle cx="24.5" cy="45" r="9.5"/>
+        <circle cx="17" cy="32" r="9.5"/><circle cx="24.5" cy="19" r="9.5"/><circle cx="39.5" cy="19" r="9.5"/>
+      </g>
+      <circle cx="32" cy="32" r="10.5" fill="#FFD86B" stroke="#5B3A5F" stroke-width="2.5"/>
+      <ellipse cx="28" cy="30" rx="1.7" ry="2.2" fill="#3B2540"/><ellipse cx="36" cy="30" rx="1.7" ry="2.2" fill="#3B2540"/>
+      <ellipse cx="25" cy="35" rx="2.6" ry="1.8" fill="#FF8FB8" opacity=".75"/><ellipse cx="39" cy="35" rx="2.6" ry="1.8" fill="#FF8FB8" opacity=".75"/>
+      <path d="M30 35q2 2.2 4 0" fill="none" stroke="#3B2540" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="st-ghost" viewBox="-4 -4 72 72">
+      <path d="M14 55V30C14 17 22 9 32 9C42 9 50 17 50 30V55L44 50L38 55L32 50L26 55L20 50Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M14 55V30C14 17 22 9 32 9C42 9 50 17 50 30V55L44 50L38 55L32 50L26 55L20 50Z" fill="#F1EAFF" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <use href="#face" y="31"/>
+    </symbol>
+    <symbol id="st-boba" viewBox="-4 -4 72 72">
+      <path d="M32 14L38 4" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round"/>
+      <path d="M16 20H48L44 54Q44 58 40 58H24Q20 58 20 54Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <rect x="12" y="14" width="40" height="9" rx="4.5" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M32 14L38 4" fill="none" stroke="#5B3A5F" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M16 20H48L44 54Q44 58 40 58H24Q20 58 20 54Z" fill="#F6DDBE" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="12" y="14" width="40" height="9" rx="4.5" fill="#FFB5D4" stroke="#5B3A5F" stroke-width="2.5"/>
+      <g fill="#5B3A5F"><circle cx="26" cy="52" r="3.2"/><circle cx="33" cy="53" r="3.2"/><circle cx="40" cy="52" r="3.2"/><circle cx="29.5" cy="47.5" r="3"/><circle cx="36.5" cy="47.5" r="3"/></g>
+      <g transform="translate(6.4 0) scale(.8 1)"><use href="#face" y="35"/></g>
+    </symbol>
+    <symbol id="st-cupcake" viewBox="-4 -4 72 72">
+      <path d="M14 38C12 26 20 15 32 15C44 15 52 26 50 38Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M16 38H48L44 57H20Z" fill="#fff" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+      <circle cx="32" cy="11" r="5.5" fill="#fff" stroke="#fff" stroke-width="9"/>
+      <path d="M16 38H48L44 57H20Z" fill="#FFC27A" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M14 38C12 26 20 15 32 15C44 15 52 26 50 38Z" fill="#FFD6E8" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="32" cy="11" r="5.5" fill="#FF6B8B" stroke="#5B3A5F" stroke-width="2.5"/>
+      <g transform="translate(6.4 0) scale(.8 1)"><use href="#face" y="29"/></g>
+    </symbol>
+    <symbol id="st-cherry" viewBox="-4 -4 72 72">
+      <g fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"><path d="M21 42Q24 20 38 9"/><path d="M43 42Q42 22 38 9"/></g>
+      <circle cx="21" cy="46" r="11" fill="#fff" stroke="#fff" stroke-width="10"/>
+      <circle cx="44" cy="46" r="11" fill="#fff" stroke="#fff" stroke-width="10"/>
+      <path d="M38 9Q47 4 54 10Q46 15 38 9Z" fill="#fff" stroke="#fff" stroke-width="9" stroke-linejoin="round"/>
+      <g fill="none" stroke="#5B3A5F" stroke-width="2.8" stroke-linecap="round"><path d="M21 42Q24 20 38 9"/><path d="M43 42Q42 22 38 9"/></g>
+      <circle cx="21" cy="46" r="11" fill="#FF7A98" stroke="#5B3A5F" stroke-width="2.5"/>
+      <circle cx="44" cy="46" r="11" fill="#FF7A98" stroke="#5B3A5F" stroke-width="2.5"/>
+      <path d="M38 9Q47 4 54 10Q46 15 38 9Z" fill="#A6E8BE" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+      <g fill="#3B2540"><ellipse cx="17.5" cy="45" rx="1.6" ry="2.1"/><ellipse cx="24.5" cy="45" rx="1.6" ry="2.1"/><ellipse cx="40.5" cy="45" rx="1.6" ry="2.1"/><ellipse cx="47.5" cy="45" rx="1.6" ry="2.1"/></g>
+      <g fill="none" stroke="#3B2540" stroke-width="1.8" stroke-linecap="round"><path d="M19.5 49q1.5 1.7 3 0"/><path d="M42.5 49q1.5 1.7 3 0"/></g>
+    </symbol>
+    <symbol id="st-spark" viewBox="-4 -4 72 72">
+      <path d="M32 4Q35 29 60 32Q35 35 32 60Q29 35 4 32Q29 29 32 4Z" fill="#fff" stroke="#fff" stroke-width="9" stroke-linejoin="round"/>
+      <path d="M32 4Q35 29 60 32Q35 35 32 60Q29 35 4 32Q29 29 32 4Z" fill="#FFE27A" stroke="#5B3A5F" stroke-width="2.5" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="wrap">
+  <header class="top">
+    <h1><svg class="st s32 bob" aria-hidden="true"><use href="#st-mochi"/></svg>Senisha</h1>
+    <span class="store" id="store"></span>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <p id="bannerText"></p>
+    <div class="acts">
+      <button class="sm solid" id="bannerOk" type="button">Looks right</button>
+      <button class="sm" id="bannerEdit" type="button">Change dates</button>
+    </div>
+  </div>
+
+  <section class="card hero" id="hero" aria-live="polite"></section>
+
+  <section class="card" aria-labelledby="logH">
+    <div class="ctitle"><svg class="st" aria-hidden="true"><use href="#st-star"/></svg><h2 id="logH">Log</h2></div>
+    <div class="logrow">
+      <label for="logDate" id="logLabel">Period started on</label>
+      <input type="date" id="logDate">
+    </div>
+    <button class="primary" id="logBtn" type="button">Period started</button>
+    <p class="msg" id="logMsg" role="alert"></p>
+  </section>
+
+  <section class="card fcard" aria-labelledby="fertH">
+    <div class="ctitle"><svg class="st" aria-hidden="true"><use href="#st-cloud"/></svg><h2 id="fertH">Chance of pregnancy</h2></div>
+    <div id="fertBody"></div>
+  </section>
+
+  <section class="card" aria-labelledby="phaseH">
+    <div class="ctitle"><svg class="st" aria-hidden="true"><use href="#st-flower"/></svg><h2 id="phaseH">What usually happens now</h2></div>
+    <div id="phaseBody"></div>
+    <details class="all">
+      <summary>See all four phases</summary>
+      <div id="allPhases"></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="careH">
+    <div class="ctitle"><svg class="st" aria-hidden="true"><use href="#st-strawberry"/></svg><h2 id="careH">Care guide</h2></div>
+    <p class="line" style="margin-bottom:6px">General information, not a diagnosis.</p>
+
+    <details class="acc">
+      <summary>Hygiene during your period</summary>
+      <ul>
+        <li>Change a pad every 4 to 6 hours, even if it is not full. A tampon should stay in 8 hours at most, and a menstrual cup up to 12 hours.</li>
+        <li>Wash your hands before and after changing.</li>
+        <li>Wash the outside of the genital area with plain water or a mild unscented soap once or twice a day. Do not wash or douche inside the vagina.</li>
+        <li>After using the toilet, wipe from front to back.</li>
+        <li>Wear clean, breathable cotton underwear and change it daily, or sooner if it is damp or stained.</li>
+        <li>Wrap used pads in paper and put them in a bin. Do not flush them.</li>
+        <li>Wash reusable cloth pads in hot water and dry them fully in the sun. Boil a menstrual cup for 5 to 10 minutes between periods.</li>
+        <li>Skip scented pads, sprays and powders. They can irritate the skin.</li>
+        <li>It is fine to bathe, wash your hair and exercise during your period.</li>
+        <li>Drink water, eat regular meals with iron-rich foods, and rest when you can.</li>
+      </ul>
+    </details>
+
+    <details class="acc">
+      <summary>Urine and discharge</summary>
+      <h3>Urine</h3>
+      <ul>
+        <li>Pale yellow to light amber is normal. Darker yellow or orange usually means you need more water.</li>
+        <li>Bright yellow is often from B vitamins. Beetroot and some medicines can turn urine pink or reddish for a day or two.</li>
+        <li>Period blood does not change the colour of urine. You may see blood in the toilet that comes from the vagina. Pink or red urine when you are not on your period needs a doctor.</li>
+        <li>See a doctor for cloudy urine, a strong smell, burning or pain when peeing, needing to pee very often, or blood in the urine. These can be signs of a urine infection, which is common and easy to treat.</li>
+      </ul>
+      <h3>Discharge through the cycle</h3>
+      <ul>
+        <li>After your period: little, white or cloudy, a bit sticky.</li>
+        <li>Fertile window: clear, slippery and stretchy, like raw egg white.</li>
+        <li>Before your period: thicker, creamy white or cloudy.</li>
+        <li>Brown or dark discharge at the start or end of a period is usually old blood.</li>
+        <li>Green, grey or yellow discharge, a fishy or foul smell, itching or burning needs a check.</li>
+      </ul>
+    </details>
+
+    <details class="acc">
+      <summary>When to see a doctor</summary>
+      <ul>
+        <li>Soaking a pad every hour for several hours, or passing clots bigger than a coin.</li>
+        <li>A period that lasts more than 7 days.</li>
+        <li>Cycles that are regularly shorter than 21 days or longer than 35 days, or no period for 3 months when you are not pregnant.</li>
+        <li>Pain that stops you from school, work or daily life, or pain that keeps getting worse.</li>
+        <li>Bleeding between periods or after sex.</li>
+        <li>Fever, dizziness, vomiting or a rash while using a tampon or cup. Take it out and get urgent help.</li>
+        <li>A late period when you could be pregnant. Take a pregnancy test from the first day of the missed period, and see a doctor if it is positive or you are unsure.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="card" id="feelCard" aria-labelledby="feelH">
+    <div class="ctitle"><svg class="st" aria-hidden="true"><use href="#st-heart"/></svg><h2 id="feelH">How are you today?</h2></div>
+    <div class="logrow">
+      <label for="feelDate">Day</label>
+      <input type="date" id="feelDate">
+    </div>
+    <div class="grp"><p class="gl" id="flowL">Flow</p><div class="chips" id="flowChips" role="group" aria-labelledby="flowL"></div></div>
+    <div class="grp"><p class="gl" id="moodL">Mood</p><div class="chips" id="moodChips" role="group" aria-labelledby="moodL"></div></div>
+    <div class="grp"><p class="gl" id="bodyL">Body</p><div class="chips" id="bodyChips" role="group" aria-labelledby="bodyL"></div></div>
+    <div class="grp"><label class="gl" for="feelNote">Note</label><textarea id="feelNote" rows="2" maxlength="500" placeholder="Anything else worth remembering"></textarea></div>
+    <button class="primary" id="feelSave" type="button">Save for this day</button>
+    <p class="msg" id="feelMsg" role="alert"></p>
+    <h3 class="sub">Recent entries</h3>
+    <ul class="hist" id="entries"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="calTitle">
+    <div class="calhead">
+      <button class="nav" id="prevM" type="button" aria-label="Previous month">&#8249;</button>
+      <h2 id="calTitle"></h2>
+      <button class="nav" id="nextM" type="button" aria-label="Next month">&#8250;</button>
+    </div>
+    <div class="dow" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div class="grid" id="calGrid"></div>
+    <div class="legend">
+      <span><i class="sw p"></i>Period</span>
+      <span><i class="sw e"></i>Expected</span>
+      <span><i class="sw t"></i>Today</span>
+      <span><i class="sw f1"></i>High chance</span>
+      <span><i class="sw f2"></i>Highest chance</span>
+      <span><i class="sw n"></i>Has notes</span>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="histH">
+    <div class="ctitle"><svg class="st" aria-hidden="true"><use href="#st-cherry"/></svg><h2 id="histH">History</h2></div>
+    <ul class="hist" id="hist"></ul>
+    <dl class="stats" id="stats"></dl>
+    <p class="note" id="statNote"></p>
+  </section>
+  <footer class="foot">
+    <div class="row-st" aria-hidden="true">
+      <svg class="st"><use href="#st-ghost"/></svg><svg class="st"><use href="#st-boba"/></svg><svg class="st"><use href="#st-mochi"/></svg><svg class="st"><use href="#st-cupcake"/></svg><svg class="st"><use href="#st-cherry"/></svg>
+    </div>
+    <p>Be kind to yourself today.</p>
+  </footer>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+  var DAY = 86400000, KEY = 'my-cycle.v1';
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function iso(y,m,d){ return y+'-'+pad(m)+'-'+pad(d); }
+  function parse(s){ var a = s.split('-').map(Number); return Date.UTC(a[0],a[1]-1,a[2]) / DAY; }
+  function fromDay(n){ var d = new Date(n*DAY); return iso(d.getUTCFullYear(), d.getUTCMonth()+1, d.getUTCDate()); }
+  function valid(s){ return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && fromDay(parse(s)) === s; }
+  function fmt(n,o){ var opt = o || {day:'numeric', month:'short'}; opt.timeZone = 'UTC'; return new Date(n*DAY).toLocaleDateString(undefined, opt); }
+  function plural(n,w){ return n+' '+w+(n===1?'':'s'); }
+  function avg(a){ return a.reduce(function(x,y){return x+y;},0) / a.length; }
+  function $(id){ return document.getElementById(id); }
+
+  var now = new Date();
+  var TODAY = iso(now.getFullYear(), now.getMonth()+1, now.getDate());
+  var T = parse(TODAY);
+
+  // Starting point from what the user told us: period ended 4 Oct, assumed 5 days long.
+  function seedPeriods(){ return []; }
+  var state = { periods: seedPeriods(), logs: {}, seeded: false };
+  var MOODS = ['Happy','Calm','Energetic','Moody','Irritable','Anxious','Sad','Teary'];
+  var BODY = ['Cramps','Headache','Back pain','Bloating','Sore breasts','Nausea','Tired','Acne','Cravings','Feeling good'];
+  var FLOW = ['Spotting','Light','Medium','Heavy'];
+  var form = { mood:[], body:[], flow:'', note:'' }, formTouched = false;
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var view = { y: now.getFullYear(), m: now.getMonth() };
+  var editing = -1, confirmDel = -1;
+  var ref = null, storeKind = 'pending', saving = false, again = false, dirty = false;
+
+  function normalize(data){
+    var out = [];
+    var list = (data && Array.isArray(data.periods)) ? data.periods : [];
+    list.forEach(function(p){
+      if (p && valid(p.start) && parse(p.start) <= T){
+        var e = (valid(p.end) && parse(p.end) >= parse(p.start) && parse(p.end) <= T) ? p.end : null;
+        out.push({ start:p.start, end:e });
+      }
+    });
+    out.sort(function(a,b){ return parse(a.start) - parse(b.start); });
+    return out;
+  }
+  function normalizeLogs(data){
+    var out = {}, src = (data && data.logs && typeof data.logs === 'object') ? data.logs : {};
+    Object.keys(src).forEach(function(k){
+      if (!valid(k) || parse(k) > T) return;
+      var e = src[k] || {};
+      var mood = (Array.isArray(e.mood) ? e.mood : []).filter(function(x){ return MOODS.indexOf(x) > -1; });
+      var body = (Array.isArray(e.body) ? e.body : []).filter(function(x){ return BODY.indexOf(x) > -1; });
+      var flow = FLOW.indexOf(e.flow) > -1 ? e.flow : '';
+      var note = typeof e.note === 'string' ? e.note.slice(0,500) : '';
+      if (mood.length || body.length || flow || note) out[k] = { mood:mood, body:body, flow:flow, note:note };
+    });
+    return out;
+  }
+  function payload(){
+    return { v:1, seeded: !!state.seeded, logs: state.logs,
+      periods: state.periods.map(function(p){ return { start:p.start, end:p.end || null }; }) };
+  }
+  function persistLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(payload())); }catch(e){} }
+
+  var POP = ['star','heart','flower','strawberry','cloud','mochi','ghost','boba','cupcake','cherry'];
+  function toast(t){
+    var el = $('toast'), sad = /^Couldn/.test(t);
+    el.innerHTML = (sad ? '' : '<svg class="st" aria-hidden="true"><use href="#st-' + POP[Math.floor(Math.random()*POP.length)] + '"/></svg>') + '<span></span>';
+    el.lastChild.textContent = t;
+    el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    clearTimeout(toast.h); toast.h = setTimeout(function(){ el.classList.remove('on'); }, 2600);
+  }
+  function burst(el){
+    if (!el || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var r = el.getBoundingClientRect(), x = r.left + r.width/2, y = r.top + r.height/2;
+    var names = ['star','heart','flower','spark','strawberry','cloud','ghost','boba','cupcake','cherry'];
+    for (var i = 0; i < 6; i++){
+      var s = document.createElement('span'), a = (Math.PI*2*i/6) + Math.random()*.6, d = 50 + Math.random()*40;
+      s.className = 'fly';
+      s.innerHTML = '<svg aria-hidden="true"><use href="#st-' + names[Math.floor(Math.random()*names.length)] + '"/></svg>';
+      s.style.left = x + 'px'; s.style.top = y + 'px';
+      s.style.setProperty('--dx', (Math.cos(a)*d) + 'px');
+      s.style.setProperty('--dy', (Math.sin(a)*d - 30) + 'px');
+      s.style.setProperty('--r', (Math.random()*80 - 40) + 'deg');
+      document.body.appendChild(s);
+      setTimeout((function(n){ return function(){ n.remove(); }; })(s), 950);
+    }
+  }
+  function mascotHtml(t, side){
+    return '<div class="mascot"><svg class="st big bob" aria-hidden="true"><use href="#st-mochi"/></svg><p class="bubble">' + esc(t) + '</p>' +
+      (side ? '<svg class="st side" aria-hidden="true"><use href="#st-' + side + '"/></svg>' : '') + '</div>';
+  }
+  function renderStore(){
+    var t = '';
+    if (storeKind === 'cloud') t = 'Private to your account';
+    else if (storeKind === 'local') t = 'Saved on this device only';
+    $('store').textContent = t;
+  }
+  async function save(){
+    dirty = true; persistLocal();
+    if (!ref){ toast('Saved on this device'); renderStore(); return; }
+    if (saving){ again = true; return; }
+    saving = true;
+    try{
+      do { again = false; await ref.set(payload()); } while (again);
+      storeKind = 'cloud'; toast('Saved');
+    }catch(e){
+      storeKind = 'local'; toast("Couldn't save online. Kept on this device.");
+    }
+    saving = false; renderStore();
+  }
+
+  function stats(){
+    var ps = state.periods, diffs = [], lens = [];
+    for (var i = 1; i < ps.length; i++) diffs.push(parse(ps[i].start) - parse(ps[i-1].start));
+    ps.forEach(function(p){ if (p.end) lens.push(parse(p.end) - parse(p.start) + 1); });
+    var rec = diffs.slice(-6);
+    var cycle = rec.length ? Math.round(avg(rec)) : 28;
+    var plen = lens.length ? Math.round(avg(lens.slice(-6))) : 5;
+    var spread = rec.length > 1 ? Math.max.apply(null, rec) - Math.min.apply(null, rec) : 0;
+    return { cycle: Math.max(cycle, 15), plen: Math.max(plen, 1), estCycle: !rec.length, estPeriod: !lens.length || state.seeded, count: ps.length, spread: spread };
+  }
+
+  function renderBanner(){
+    var b = $('banner');
+    if (!state.seeded || !state.periods.length){ b.hidden = true; return; }
+    var p = state.periods[0];
+    $('bannerText').textContent = 'Starting point: a period from ' + fmt(parse(p.start)) + ' to ' + fmt(parse(p.end)) + ' (' + plural(parse(p.end) - parse(p.start) + 1, 'day') + ', start date assumed). If the dates are off, change them. Otherwise tap Looks right.';
+    b.hidden = false;
+  }
+
+  function renderHero(){
+    var el = $('hero'), ps = state.periods, st = stats();
+    if (!ps.length){
+      el.innerHTML = mascotHtml('Hi! Tap Period started in the Log card when your next one begins.', 'cherry') + '<div class="empty"><p class="phase">No periods logged yet</p></div>';
+      return;
+    }
+    var last = ps[ps.length-1], s = parse(last.start), day = T - s + 1;
+    var inP = last.end ? (T <= parse(last.end)) : true;
+    var nextStart = s + st.cycle, until = nextStart - T;
+    var phase, l1, l2;
+    if (inP){
+      phase = 'On your period';
+      l1 = 'Day ' + day + ' of this period';
+    } else {
+      var since = T - parse(last.end);
+      l1 = 'Period ended ' + (since === 0 ? 'today' : plural(since,'day') + ' ago');
+      var pi = phaseInfo();
+      phase = until < 0 ? 'Past the expected date' : (pi.id === 'after' ? 'After your period' : (pi.id === 'fertile' ? 'Fertile window' : 'Before your period'));
+    }
+    if (until > 0) l2 = 'Next period expected <b>' + fmt(nextStart) + '</b>, in ' + plural(until,'day');
+    else if (until === 0) l2 = 'Next period expected <b>today</b>';
+    else l2 = 'Expected <b>' + fmt(nextStart) + '</b>, ' + plural(-until,'day') + ' late';
+    var C = 2*Math.PI*52, frac = Math.min(day / st.cycle, 1);
+    var says = { period:'Be gentle with yourself. Rest, warm tea and snacks are allowed!', after:'Energy is coming back. You are doing great!', fertile:'High chance days. Plan with care!', before:'Moods and cravings are normal now. Sleep and snacks help!' };
+    var say = until < 0 ? 'Past the expected date. Take a test or see a doctor if you are unsure.' : says[phaseInfo().id];
+    var sides = { period:'boba', after:'flower', fertile:'star', before:'cupcake' };
+    var side = until < 0 ? 'ghost' : sides[phaseInfo().id];
+    el.innerHTML = mascotHtml(say, side) +
+      '<svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Cycle day ' + day + '">' +
+      '<circle class="trk" cx="60" cy="60" r="52"></circle>' +
+      '<circle class="prg" cx="60" cy="60" r="52" transform="rotate(-90 60 60)" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C*(1-frac)).toFixed(1) + '"></circle>' +
+      '<text class="rnum" x="60" y="64" text-anchor="middle">' + day + '</text>' +
+      '<text class="rlab" x="60" y="82" text-anchor="middle">cycle day</text></svg>' +
+      '<div class="heroText"><p class="phase">' + phase + '</p><p class="line">' + l1 + '</p><p class="line">' + l2 + '</p></div>';
+  }
+
+  function renderLog(){
+    var ps = state.periods, last = ps[ps.length-1], open = !!(last && !last.end);
+    $('logLabel').textContent = open ? 'Period ended on' : 'Period started on';
+    $('logBtn').textContent = open ? 'Period ended' : 'Period started';
+    $('logDate').max = TODAY;
+  }
+
+  function renderCal(){
+    var st = stats(), ps = state.periods, last = ps[ps.length-1];
+    $('calTitle').textContent = fmt(Date.UTC(view.y, view.m, 1) / DAY, {month:'long', year:'numeric'});
+    var dow = new Date(Date.UTC(view.y, view.m, 1)).getUTCDay();
+    var dim = new Date(Date.UTC(view.y, view.m+1, 0)).getUTCDate();
+    var h = '', i, d, k, j, ovs = ovList();
+    for (i = 0; i < dow; i++) h += '<span class="day"></span>';
+    for (d = 1; d <= dim; d++){
+      var n = Date.UTC(view.y, view.m, d) / DAY, kind = '';
+      for (j = 0; j < ps.length; j++){
+        var a = parse(ps[j].start), e = ps[j].end ? parse(ps[j].end) : Math.max(a, T);
+        if (n >= a && n <= e){ kind = 'period'; break; }
+      }
+      if (!kind && last){
+        for (k = 1; k <= 8; k++){
+          var ps0 = parse(last.start) + k*st.cycle;
+          if (n >= ps0 && n < ps0 + st.plen){ kind = 'pred'; break; }
+        }
+      }
+      var logged = !!state.logs[fromDay(n)];
+      var lv = kind ? 0 : chanceOn(n, ovs);
+      var cls = 'day' + (kind ? ' ' + kind : '') + (lv ? ' f' + lv : '') + (n === T ? ' today' : '') + (logged ? ' logged' : '');
+      h += '<span class="' + cls + '">' + d + (logged ? '<span class="sr">, has notes</span>' : '') +
+        (lv === 2 ? '<span class="sr">, highest chance of pregnancy</span>' : (lv === 1 ? '<span class="sr">, higher chance of pregnancy</span>' : '')) +
+        (kind === 'period' ? '<span class="sr">, period</span>' : '') +
+        (kind === 'pred' ? '<span class="sr">, expected period</span>' : '') +
+        (n === T ? '<span class="sr">, today</span>' : '') + '</span>';
+    }
+    $('calGrid').innerHTML = h;
+  }
+
+  function renderHist(){
+    var ps = state.periods, ul = $('hist'), h = '';
+    if (!ps.length){ ul.innerHTML = '<li class="row"><span class="meta">Nothing logged yet.</span></li>'; }
+    else {
+      for (var i = ps.length - 1; i >= 0; i--){
+        var p = ps[i];
+        if (i === editing){
+          h += '<li class="row edit"><div class="erow">' +
+            '<label for="eS">Started<input type="date" id="eS" value="' + p.start + '" max="' + TODAY + '"></label>' +
+            '<label for="eE">Ended (leave empty if ongoing)<input type="date" id="eE" value="' + (p.end || '') + '" max="' + TODAY + '"></label></div>' +
+            '<p class="msg" id="eMsg" role="alert"></p>' +
+            '<div class="racts"><button class="sm solid" type="button" data-act="save" data-i="' + i + '">Save</button>' +
+            '<button class="sm" type="button" data-act="cancel">Cancel</button></div></li>';
+          continue;
+        }
+        var s = parse(p.start);
+        var range = p.end ? fmt(s) + ' to ' + fmt(parse(p.end)) : fmt(s) + ' to now';
+        var len = p.end ? plural(parse(p.end) - s + 1, 'day') : 'ongoing';
+        var cyc = ps[i+1] ? plural(parse(ps[i+1].start) - s, 'day') + ' cycle' : 'cycle in progress';
+        if (i === confirmDel){
+          h += '<li class="row"><span>Delete ' + range + '?</span><div class="racts">' +
+            '<button class="link danger" type="button" data-act="yes" data-i="' + i + '">Delete</button>' +
+            '<button class="link" type="button" data-act="cancel">Keep</button></div></li>';
+        } else {
+          h += '<li class="row"><div class="rmain"><strong>' + range + '</strong><span class="meta">' + len + ' &middot; ' + cyc + '</span></div>' +
+            '<div class="racts"><button class="link" type="button" data-act="edit" data-i="' + i + '">Edit</button>' +
+            '<button class="link danger" type="button" data-act="del" data-i="' + i + '">Delete</button></div></li>';
+        }
+      }
+      ul.innerHTML = h;
+    }
+    var st = stats();
+    $('stats').innerHTML =
+      '<div><dt>Average cycle</dt><dd>' + plural(st.cycle,'day') + '</dd></div>' +
+      '<div><dt>Average period</dt><dd>' + plural(st.plen,'day') + '</dd></div>' +
+      '<div><dt>Periods logged</dt><dd>' + st.count + '</dd></div>';
+    var note = '';
+    if (st.estCycle) note = 'Predictions use a 28-day cycle until you log two periods.';
+    else if (st.estPeriod) note = 'Period length is a guess until you log a full period yourself.';
+    $('statNote').textContent = note;
+  }
+
+  function chipsHtml(list, sel, group){
+    return list.map(function(x){
+      return '<button type="button" class="chip" data-g="' + group + '" data-v="' + esc(x) + '" aria-pressed="' + (sel.indexOf(x) > -1) + '">' + esc(x) + '</button>';
+    }).join('');
+  }
+  function renderChips(){
+    $('flowChips').innerHTML = chipsHtml(FLOW, form.flow ? [form.flow] : [], 'flow');
+    $('moodChips').innerHTML = chipsHtml(MOODS, form.mood, 'mood');
+    $('bodyChips').innerHTML = chipsHtml(BODY, form.body, 'body');
+  }
+  function loadForm(){
+    var d = $('feelDate').value, e = state.logs[d];
+    form = { mood: e ? e.mood.slice() : [], body: e ? e.body.slice() : [], flow: e ? e.flow : '', note: e ? e.note : '' };
+    formTouched = false;
+    $('feelNote').value = form.note;
+    $('feelH').textContent = (d === TODAY || !valid(d)) ? 'How are you today?' : 'How were you on ' + fmt(parse(d)) + '?';
+    renderChips();
+  }
+  function renderEntries(){
+    var keys = Object.keys(state.logs).sort().reverse().slice(0, 8), ul = $('entries');
+    if (!keys.length){ ul.innerHTML = '<li class="row"><span class="meta">Nothing noted yet. Saved days show up here.</span></li>'; return; }
+    ul.innerHTML = keys.map(function(k){
+      var e = state.logs[k];
+      var bits = [].concat(e.flow ? ['Flow: ' + e.flow.toLowerCase()] : [], e.mood, e.body).join(', ');
+      var note = e.note ? (bits ? ' · ' : '') + (e.note.length > 70 ? e.note.slice(0,70) + '…' : e.note) : '';
+      return '<li class="row"><div class="rmain"><strong>' + fmt(parse(k), {weekday:'short', day:'numeric', month:'short'}) + '</strong><span class="meta">' + esc(bits + note) + '</span></div>' +
+        '<button class="link" type="button" data-d="' + k + '">Edit</button></li>';
+    }).join('');
+  }
+
+  var PHASES = {
+    period: { name:'Your period', days:'Usually 2 to 7 days. Short periods of 2 to 3 days are normal for some people.',
+      hormones:'Estrogen and progesterone are at their lowest, and the womb lining sheds.',
+      body:'Cramps, lower back ache, tiredness, headaches. Sometimes loose stools.',
+      mood:'Energy is often low. You may feel flat or irritable, and many people feel lighter once the bleeding eases.',
+      help:'Warmth on the belly, rest, water, and iron-rich food like lentils and greens. See a doctor if the pain stops you from daily life or you soak a pad every hour or two.' },
+    after: { name:'After your period', days:'Between the period and the fertile window',
+      hormones:'Estrogen climbs steadily.',
+      body:'Less bloating, clearer skin and more physical energy.',
+      mood:'Mood and focus usually lift. Many people feel more motivated and sociable.',
+      help:'A good time for harder workouts and for tasks that need concentration.' },
+    fertile: { name:'Fertile window', days:'About 6 days, ending just after ovulation',
+      hormones:'Estrogen peaks and an egg is released around ovulation.',
+      body:'Clear, stretchy mucus like raw egg white, higher libido, and sometimes a mild twinge on one side of the lower belly or light spotting.',
+      mood:'Often confident, social and energetic.',
+      help:'Pregnancy is most likely in these days, so plan around them whether you want to conceive or avoid it.' },
+    before: { name:'Before your period', days:'From ovulation until the next period, strongest in the last week',
+      hormones:'Progesterone rises, then both hormones drop just before bleeding starts.',
+      body:'Bloating, sore breasts, cravings, acne, tiredness, poorer sleep and headaches.',
+      mood:'Irritability, mood swings, anxiety or feeling teary are common (PMS). Most of it eases within a day or two of the period starting.',
+      help:'Regular sleep, less salt and gentle exercise can take the edge off. If your mood feels very low or hopeless, talk to a doctor.' }
+  };
+  var PHASE_ORDER = ['period','after','fertile','before'];
+
+  // Ovulation is estimated 14 days before the next period. Higher chance runs from 5 days before to 1 day after.
+  function ovList(){
+    var ps = state.periods, st = stats(), out = [], i;
+    if (!ps.length) return out;
+    for (i = 0; i < ps.length - 1; i++) out.push(parse(ps[i+1].start) - 14);
+    var s = parse(ps[ps.length-1].start);
+    for (var k = 1; k <= 4; k++) out.push(s + k*st.cycle - 14);
+    return out;
+  }
+  function chanceOn(n, ovs){
+    var lvl = 0;
+    ovs.forEach(function(o){
+      if (n >= o-2 && n <= o) lvl = Math.max(lvl, 2);
+      else if (n >= o-5 && n <= o+1) lvl = Math.max(lvl, 1);
+    });
+    return lvl;
+  }
+  function phaseInfo(){
+    var ps = state.periods; if (!ps.length) return null;
+    var last = ps[ps.length-1], st = stats(), s = parse(last.start), ov = s + st.cycle - 14;
+    var inP = last.end ? (T <= parse(last.end)) : true;
+    var id = inP ? 'period' : (T < ov-5 ? 'after' : (T <= ov+1 ? 'fertile' : 'before'));
+    return { id:id, ov:ov };
+  }
+  function phaseHtml(id, here){
+    var p = PHASES[id];
+    return '<div class="ph"><p class="pname">' + p.name + (here ? '<span class="tag">You are here</span>' : '') + '</p><p class="pdays">' + p.days + '</p>' +
+      '<dl class="pd"><dt>Hormones</dt><dd>' + p.hormones + '</dd><dt>Body</dt><dd>' + p.body + '</dd><dt>Mood</dt><dd>' + p.mood + '</dd><dt>What helps</dt><dd>' + p.help + '</dd></dl></div>';
+  }
+  function renderPhase(){
+    var pi = phaseInfo(), cur = pi ? pi.id : '';
+    $('phaseBody').innerHTML = pi ? phaseHtml(cur, false).replace('class="ph"', 'class="ph0"') : '<p class="line">Log a period to see what usually happens at each stage.</p>';
+    $('allPhases').innerHTML = PHASE_ORDER.map(function(id){ return phaseHtml(id, id === cur); }).join('');
+  }
+  function renderFert(){
+    var el = $('fertBody'), ps = state.periods;
+    if (!ps.length){ el.innerHTML = '<p class="line">Log a period to see your estimated fertile window.</p>'; return; }
+    var st = stats(), ovs = ovList(), lv = chanceOn(T, ovs), ov = null, i;
+    for (i = 0; i < ovs.length; i++){ if (ovs[i] + 1 >= T){ ov = ovs[i]; break; } }
+    var names = ['Low chance today','High chance of pregnancy today','Highest chance of pregnancy today'];
+    var subs = ['A safer day, but the chance is never zero.','Higher chance of pregnancy if you have unprotected sex.','Highest chance of pregnancy if you have unprotected sex.'];
+    var tags = ['low chance','high chance of pregnancy','highest chance of pregnancy'];
+    var h = '<p><span class="pill l' + lv + '">' + names[lv] + '</span></p><p class="line">' + subs[lv] + '</p>';
+    if (ov !== null){
+      var dd = ov - T;
+      h += '<p class="line">Likely ovulation: <b>' + fmt(ov) + '</b>' + (dd > 0 ? ', in ' + plural(dd,'day') : (dd === 0 ? ', today' : ', yesterday')) +
+        '<br>High-chance days: <b>' + fmt(ov-5) + ' to ' + fmt(ov+1) + '</b></p>';
+    }
+    var s = '';
+    for (i = 0; i < 7; i++){
+      var n = T + i, l = chanceOn(n, ovs);
+      s += '<div class="sc l' + l + '"><span>' + fmt(n, {weekday:'short'}) + '</span><b>' + fmt(n, {day:'numeric'}) + '</b><span class="sr">' + tags[l] + '</span></div>';
+    }
+    h += '<div class="strip">' + s + '</div>';
+    h += '<div class="legend"><span><i class="sw f0"></i>Low chance</span><span><i class="sw f1"></i>High chance</span><span><i class="sw f2"></i>Highest chance</span></div>';
+    var note = 'These are estimates from your logged dates. Low-chance days are safer, not safe. Sperm can survive up to 5 days and ovulation can shift, so this is not reliable birth control. To avoid pregnancy, use condoms or another method, and ask a doctor if you are unsure.';
+    if (st.estCycle) note += ' Dates use a default 28-day cycle until you log two periods.';
+    else if (st.spread >= 7) note += ' Your cycle lengths vary by ' + plural(st.spread,'day') + ', so treat these dates as rough.';
+    h += '<p class="fnote">' + note + '</p>';
+    el.innerHTML = h;
+  }
+
+  function render(){ renderStore(); renderBanner(); renderHero(); renderLog(); renderFert(); renderPhase(); renderCal(); renderHist(); renderEntries(); }
+
+  // Log button
+  $('logBtn').addEventListener('click', function(ev){
+    var d = $('logDate').value, msg = $('logMsg'), ps = state.periods, last = ps[ps.length-1];
+    msg.textContent = '';
+    if (!valid(d) || parse(d) > T){ msg.textContent = 'Pick a date that is today or earlier.'; return; }
+    if (last && !last.end){
+      if (parse(d) < parse(last.start)){ msg.textContent = 'The end date cannot be before the start (' + fmt(parse(last.start)) + ').'; return; }
+      last.end = d;
+    } else {
+      if (last && parse(d) <= parse(last.end)){ msg.textContent = 'Pick a date after your last period ended (' + fmt(parse(last.end)) + '). To fix older entries, use Edit in History.'; return; }
+      ps.push({ start:d, end:null });
+    }
+    burst(ev.currentTarget);
+    state.seeded = false; save(); render();
+  });
+
+  // Banner
+  $('bannerOk').addEventListener('click', function(ev){ burst(ev.currentTarget); state.seeded = false; save(); render(); });
+  $('bannerEdit').addEventListener('click', function(){ editing = 0; confirmDel = -1; renderHist(); var e = $('eS'); if (e){ e.scrollIntoView({block:'center'}); e.focus(); } });
+
+  // Calendar nav
+  $('prevM').addEventListener('click', function(){ view.m--; if (view.m < 0){ view.m = 11; view.y--; } renderCal(); });
+  $('nextM').addEventListener('click', function(){ view.m++; if (view.m > 11){ view.m = 0; view.y++; } renderCal(); });
+
+  // History actions
+  $('hist').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) return;
+    var act = b.getAttribute('data-act'), i = Number(b.getAttribute('data-i')), ps = state.periods;
+    if (act === 'edit'){ editing = i; confirmDel = -1; renderHist(); var e = $('eS'); if (e) e.focus(); }
+    else if (act === 'del'){ confirmDel = i; editing = -1; renderHist(); }
+    else if (act === 'cancel'){ editing = -1; confirmDel = -1; renderHist(); }
+    else if (act === 'yes'){ ps.splice(i,1); confirmDel = -1; state.seeded = false; save(); render(); }
+    else if (act === 'save'){
+      var s = $('eS').value, e2 = $('eE').value, msg = $('eMsg'), j;
+      if (!valid(s) || parse(s) > T){ msg.textContent = 'Pick a start date that is today or earlier.'; return; }
+      if (e2 && (!valid(e2) || parse(e2) < parse(s) || parse(e2) > T)){ msg.textContent = 'The end date must be on or after the start, and not in the future.'; return; }
+      var es = parse(s), ee = e2 ? parse(e2) : T;
+      for (j = 0; j < ps.length; j++){
+        if (j === i) continue;
+        var qs = parse(ps[j].start), qe = ps[j].end ? parse(ps[j].end) : T;
+        if (es <= qe && ee >= qs){ msg.textContent = 'These dates overlap another period.'; return; }
+        if (!e2 && !ps[j].end){ msg.textContent = 'Only one period can be ongoing.'; return; }
+      }
+      ps[i] = { start:s, end:e2 || null };
+      ps.sort(function(a,b){ return parse(a.start) - parse(b.start); });
+      editing = -1; state.seeded = false; save(); render();
+    }
+  });
+
+  // Mood and body notes
+  $('feelCard').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) return;
+    var g = b.getAttribute('data-g'), v = b.getAttribute('data-v');
+    if (g){
+      formTouched = true;
+      if (g === 'flow'){ form.flow = (form.flow === v) ? '' : v; }
+      else { var a = form[g], ix = a.indexOf(v); if (ix > -1) a.splice(ix,1); else a.push(v); }
+      renderChips();
+    } else if (b.getAttribute('data-d')){
+      $('feelDate').value = b.getAttribute('data-d'); loadForm();
+      $('feelDate').scrollIntoView({block:'center'});
+    }
+  });
+  $('feelNote').addEventListener('input', function(){ formTouched = true; });
+  $('feelDate').addEventListener('change', function(){
+    var d = $('feelDate').value;
+    if (!valid(d) || parse(d) > T){ $('feelDate').value = TODAY; }
+    $('feelMsg').textContent = ''; loadForm();
+  });
+  $('feelSave').addEventListener('click', function(ev){
+    var d = $('feelDate').value, msg = $('feelMsg');
+    msg.textContent = '';
+    if (!valid(d) || parse(d) > T){ msg.textContent = 'Pick a date that is today or earlier.'; return; }
+    var note = $('feelNote').value.trim().slice(0,500);
+    if (form.mood.length || form.body.length || form.flow || note){
+      state.logs[d] = { mood: form.mood.slice(), body: form.body.slice(), flow: form.flow, note: note };
+    } else { delete state.logs[d]; }
+    formTouched = false; burst(ev.currentTarget); save(); renderEntries(); renderCal();
+  });
+
+  // Keep the page current: roll over at midnight and pick up changes saved from another device.
+  function setToday(){
+    var n = new Date(), t = iso(n.getFullYear(), n.getMonth()+1, n.getDate());
+    if (t === TODAY) return false;
+    var old = TODAY;
+    TODAY = t; T = parse(t);
+    $('logDate').max = t; $('feelDate').max = t;
+    if ($('logDate').value === old) $('logDate').value = t;
+    if ($('feelDate').value === old){ $('feelDate').value = t; if (!formTouched) loadForm(); }
+    view = { y:n.getFullYear(), m:n.getMonth() };
+    return true;
+  }
+  async function syncRemote(){
+    if (!ref || saving || editing !== -1 || formTouched) return;
+    try{
+      var snap = await ref.get();
+      if (!snap.exists || saving || editing !== -1 || formTouched) return;
+      var rd = snap.data(), before = JSON.stringify(payload());
+      state.periods = normalize(rd); state.logs = normalizeLogs(rd);
+      state.seeded = rd.seeded === true && state.periods.length > 0;
+      if (state.seeded) state.periods = seedPeriods();
+      if (JSON.stringify(payload()) !== before){ loadForm(); render(); }
+    }catch(e){}
+  }
+  function refreshAll(){
+    if (setToday()) render();
+    syncRemote();
+  }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshAll(); });
+  window.addEventListener('focus', refreshAll);
+  var ticks = 0;
+  setInterval(function(){
+    if (document.hidden) return;
+    ticks++;
+    if (setToday()) render();
+    if (ticks % 5 === 0) syncRemote();
+  }, 60000);
+
+  // First paint uses the device copy if there is one, then the account copy replaces it.
+  $('logDate').value = TODAY;
+  try{
+    var raw = localStorage.getItem(KEY);
+    if (raw){
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.v === 1){
+        state.periods = normalize(parsed); state.logs = normalizeLogs(parsed);
+        state.seeded = parsed.seeded === true && state.periods.length > 0;
+        if (state.seeded) state.periods = seedPeriods();
+      }
+    }
+  }catch(e){}
+  $('feelDate').value = TODAY; $('feelDate').max = TODAY;
+  loadForm();
+  render();
+
+  (async function(){
+    try{
+      if (!(window.claude && window.claude.use)){ storeKind = 'local'; render(); return; }
+      var user = await window.claude.use('user');
+      var id = user ? await user.id() : null;
+      var db = id ? await window.claude.use('db') : null;
+      if (db && id){
+        ref = db.collection('data/users/' + id).doc('tracker');
+        var snap = await ref.get();
+        if (snap.exists && !dirty){
+          var rd = snap.data();
+          state.periods = normalize(rd); state.logs = normalizeLogs(rd);
+          state.seeded = rd.seeded === true && state.periods.length > 0;
+          if (state.seeded) state.periods = seedPeriods();
+        } else if (!snap.exists && !state.seeded && !dirty){
+          await ref.set(payload());
+        }
+        storeKind = 'cloud';
+      } else { storeKind = 'local'; }
+    }catch(e){ ref = null; storeKind = 'local'; }
+    if (!formTouched) loadForm();
+    render();
+  })();
+})();
+</script>
+</body></html>
