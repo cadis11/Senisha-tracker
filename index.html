@@ -471,7 +471,7 @@ var state = { periods: seedPeriods(), logs: {}, seeded: false };
 var MOODS = ['Happy','Calm','Energetic','Moody','Irritable','Anxious','Sad','Teary'];
 var BODY = ['Cramps','Headache','Back pain','Bloating','Sore breasts','Nausea','Tired','Acne','Cravings','Feeling good'];
 var FLOW = ['Spotting','Light','Medium','Heavy'];
-var form = { mood:[], body:[], flow:'', note:'' }, formTouched = false;
+var form = { mood:[], body:[], flow:'', note:'' }, formTouched = false, logTouched = false;
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 var view = { y: now.getFullYear(), m: now.getMonth() };
 var editing = -1, confirmDel = -1;
@@ -547,6 +547,12 @@ dirty = true; persistLocal();
 toast(space ? 'Saved' : 'Saved on this device');
 if (space) sync();
 }
+function effEnd(p, st){
+if (p.end) return parse(p.end);
+var s0 = parse(p.start);
+return (T - s0 > 6) ? s0 + Math.min(st.plen, 7) - 1 : Math.max(T, s0);
+}
+function endMissing(p){ return !p.end && (T - parse(p.start) > 6); }
 function stats(){
 var ps = state.periods, diffs = [], lens = [];
 for (var i = 1; i < ps.length; i++) diffs.push(parse(ps[i].start) - parse(ps[i-1].start));
@@ -571,15 +577,16 @@ el.innerHTML = mascotHtml('Hi! Tap Period started in the Log card when your next
 return;
 }
 var last = ps[ps.length-1], s = parse(last.start), day = T - s + 1;
-var inP = last.end ? (T <= parse(last.end)) : true;
+var ee = effEnd(last, st), assumed = endMissing(last);
+var inP = T <= ee;
 var nextStart = s + st.cycle, until = nextStart - T;
 var phase, l1, l2;
 if (inP){
 phase = 'On your period';
 l1 = 'Day ' + day + ' of this period';
 } else {
-var since = T - parse(last.end);
-l1 = 'Period ended ' + (since === 0 ? 'today' : plural(since,'day') + ' ago');
+var since = T - ee;
+l1 = (assumed ? 'Period probably ended ' : 'Period ended ') + (since === 0 ? 'today' : plural(since,'day') + ' ago') + (assumed ? '. Set the real end date in the Log card.' : '');
 var pi = phaseInfo();
 phase = until < 0 ? 'Past the expected date' : (pi.id === 'after' ? 'After your period' : (pi.id === 'fertile' ? 'Fertile window' : 'Before your period'));
 }
@@ -604,6 +611,7 @@ var ps = state.periods, last = ps[ps.length-1], open = !!(last && !last.end);
 $('logLabel').textContent = open ? 'Period ended on' : 'Period started on';
 $('logBtn').textContent = open ? 'Period ended' : 'Period started';
 $('logDate').max = TODAY;
+if (open && endMissing(last) && !logTouched) $('logDate').value = fromDay(effEnd(last, stats()));
 }
 function renderCal(){
 var st = stats(), ps = state.periods, last = ps[ps.length-1];
@@ -615,7 +623,7 @@ for (i = 0; i < dow; i++) h += '<span class="day"></span>';
 for (d = 1; d <= dim; d++){
 var n = Date.UTC(view.y, view.m, d) / DAY, kind = '';
 for (j = 0; j < ps.length; j++){
-var a = parse(ps[j].start), e = ps[j].end ? parse(ps[j].end) : Math.max(a, T);
+var a = parse(ps[j].start), e = ps[j].end ? parse(ps[j].end) : effEnd(ps[j], st);
 if (n >= a && n <= e){ kind = 'period'; break; }
 }
 if (!kind && last){
@@ -652,7 +660,7 @@ continue;
 }
 var s = parse(p.start);
 var range = p.end ? fmt(s) + ' to ' + fmt(parse(p.end)) : fmt(s) + ' to now';
-var len = p.end ? plural(parse(p.end) - s + 1, 'day') : 'ongoing';
+var len = p.end ? plural(parse(p.end) - s + 1, 'day') : (endMissing(p) ? 'no end date yet' : 'ongoing');
 var cyc = ps[i+1] ? plural(parse(ps[i+1].start) - s, 'day') + ' cycle' : 'cycle in progress';
 if (i === confirmDel){
 h += '<li class="row"><span>Delete ' + range + '?</span><div class="racts">' +
@@ -747,7 +755,7 @@ return lvl;
 function phaseInfo(){
 var ps = state.periods; if (!ps.length) return null;
 var last = ps[ps.length-1], st = stats(), s = parse(last.start), ov = s + st.cycle - 14;
-var inP = last.end ? (T <= parse(last.end)) : true;
+var inP = T <= effEnd(last, st);
 var id = inP ? 'period' : (T < ov-5 ? 'after' : (T <= ov+1 ? 'fertile' : 'before'));
 return { id:id, ov:ov };
 }
@@ -843,6 +851,7 @@ $('ideasList').innerHTML = items.map(function(it){ return '<li class="idea"><b>'
 card.hidden = false;
 }
 function render(){ renderStore(); renderBanner(); renderHero(); renderLog(); renderFert(); renderPhase(); renderCal(); renderHist(); renderEntries(); renderIdeas(); renderNotes(); updStat(); }
+$('logDate').addEventListener('input', function(){ logTouched = true; });
 $('logBtn').addEventListener('click', function(ev){
 var d = $('logDate').value, msg = $('logMsg'), ps = state.periods, last = ps[ps.length-1];
 msg.textContent = '';
@@ -854,7 +863,7 @@ last.end = d;
 if (last && parse(d) <= parse(last.end)){ msg.textContent = 'Pick a date after your last period ended (' + fmt(parse(last.end)) + '). To fix older entries, use Edit in History.'; return; }
 ps.push({ start:d, end:null });
 }
-burst(ev.currentTarget);
+burst(ev.currentTarget); logTouched = false;
 state.seeded = false; save(); render();
 });
 $('bannerOk').addEventListener('click', function(ev){ burst(ev.currentTarget); state.seeded = false; save(); render(); });
